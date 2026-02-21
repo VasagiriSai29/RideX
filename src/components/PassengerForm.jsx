@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { addPassenger } from "../services/passengers";
+import { addPassenger } from "../services/passengers"; // keep as-is for now (safe)
 
 export default function PassengerForm() {
   const [name, setName] = useState("");
@@ -8,7 +8,7 @@ export default function PassengerForm() {
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    if (!name.trim()) return alert("Please enter passenger name");
+    if (!name.trim()) return alert("Please enter rider name");
 
     setLoading(true);
     try {
@@ -21,7 +21,7 @@ export default function PassengerForm() {
       setPhone("");
     } catch (err) {
       console.error(err);
-      alert("Failed to add passenger");
+      alert("Failed to add rider");
     } finally {
       setLoading(false);
     }
@@ -30,10 +30,10 @@ export default function PassengerForm() {
   return (
     <form onSubmit={onSubmit} style={styles.form}>
       <div style={styles.field}>
-        <label style={styles.label}>Passenger Name</label>
+        <label style={styles.label}>Rider Name</label>
         <input
           style={styles.input}
-          placeholder="Enter Name"
+          placeholder="Enter name"
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
@@ -43,14 +43,14 @@ export default function PassengerForm() {
         <label style={styles.label}>Phone (optional)</label>
         <input
           style={styles.input}
-          placeholder="Mobile Number"
+          placeholder="Mobile number"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
         />
       </div>
 
       <button type="submit" style={styles.btn} disabled={loading}>
-        {loading ? "Adding..." : "Add Passenger"}
+        {loading ? "Adding..." : "Add Rider"}
       </button>
     </form>
   );
