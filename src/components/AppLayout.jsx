@@ -9,7 +9,7 @@ export default function AppLayout({ title = "Dashboard", children, onLogout, use
 
         <nav style={styles.nav}>
           <div style={{ ...styles.navItem, ...styles.navItemActive }}>Dashboard</div>
-          <div style={styles.navItem}>Passengers</div>
+          <div style={styles.navItem}>Riders</div>
           <div style={styles.navItem}>Rides</div>
           <div style={styles.navItem}>Payments</div>
           <div style={styles.navItem}>Settings</div>
@@ -40,7 +40,7 @@ export default function AppLayout({ title = "Dashboard", children, onLogout, use
           <div style={styles.topbarRight}>
             <div style={styles.searchWrap}>
               <span style={styles.searchIcon}>⌕</span>
-              <input style={styles.search} placeholder="Search passenger..." />
+              <input style={styles.search} placeholder="Search Rider..." />
             </div>
 
             <button style={styles.primaryBtn}>+ Add Ride</button>

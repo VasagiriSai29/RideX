@@ -4,57 +4,69 @@ import AppLayout from "../components/AppLayout";
 import PassengerForm from "../components/PassengerForm";
 import { listenPassengers } from "../services/passengers";
 
-
 export default function Dashboard() {
   const { user, logout } = useAuth();
-  const [passengers, setPassengers] = useState([]);
+  const [riders, setRiders] = useState([]);
 
+  // Listen to riders (still using passengers service internally)
   useEffect(() => {
-    const unsub = listenPassengers(setPassengers);
+    const unsub = listenPassengers(setRiders);
     return () => unsub();
   }, []);
 
   const stats = useMemo(() => {
     return {
-      totalPassengers: passengers.length,
-      totalPending: 0, // Day 3: calculate from rides/payments
-      todayRides: 0,   // Day 3
+      totalRiders: riders.length,
+      totalPending: 0, // Later we calculate from rides
+      todayRides: 0,   // Later
     };
-  }, [passengers]);
+  }, [riders]);
 
   return (
     <AppLayout title="Dashboard" user={user} onLogout={logout}>
+      
       {/* Stats row */}
       <div style={styles.statsRow}>
-        <Stat label="Passengers" value={stats.totalPassengers} sub="Total added" />
+        <Stat label="Riders" value={stats.totalRiders} sub="Total added" />
         <Stat label="Pending" value={`$${stats.totalPending}`} sub="Total due (next)" />
         <Stat label="Today" value={stats.todayRides} sub="Rides today (next)" />
       </div>
 
       {/* Two-column main */}
       <div style={styles.grid}>
+        
+        {/* Add Rider */}
         <div style={styles.card}>
-          <div style={styles.cardTitle}>Add Passenger</div>
-          <PassengerForm />
+          <div style={styles.cardTitle}>Add Rider</div>
+          <PassengerForm /> {/* keeping file same for safety */}
         </div>
 
+        {/* Riders List */}
         <div style={styles.card}>
           <div style={styles.cardHeader}>
-            <div style={styles.cardTitle}>Passengers</div>
+            <div style={styles.cardTitle}>Riders</div>
             <div style={styles.smallMuted}>Balances start Day 3</div>
           </div>
 
-          {passengers.length === 0 ? (
-            <div style={styles.empty}>No passengers yet. Add your first passenger.</div>
+          {riders.length === 0 ? (
+            <div style={styles.empty}>
+              No riders yet. Add your first rider.
+            </div>
           ) : (
             <div style={{ display: "grid", gap: 10 }}>
-              {passengers.map((p) => (
+              {riders.map((p) => (
                 <div key={p.id} style={styles.row}>
                   <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                    <div style={styles.badge}>{(p.name?.[0] || "P").toUpperCase()}</div>
+                    <div style={styles.badge}>
+                      {(p.name?.[0] || "R").toUpperCase()}
+                    </div>
                     <div style={{ display: "grid", gap: 2 }}>
-                      <div style={{ fontWeight: 900, color: "#0F172A" }}>{p.name}</div>
-                      <div style={styles.muted}>{p.phone || "—"}</div>
+                      <div style={{ fontWeight: 900, color: "#0F172A" }}>
+                        {p.name}
+                      </div>
+                      <div style={styles.muted}>
+                        {p.phone || "—"}
+                      </div>
                     </div>
                   </div>
 
@@ -110,14 +122,25 @@ const styles = {
     padding: 16,
     boxShadow: "0 14px 30px rgba(2, 6, 23, 0.06)",
   },
-  cardHeader: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 10, flexWrap: "wrap" },
-  cardTitle: { fontWeight: 900, color: "#0F172A", marginBottom: 10 },
+  cardHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "baseline",
+    gap: 10,
+    flexWrap: "wrap",
+  },
+  cardTitle: {
+    fontWeight: 900,
+    color: "#0F172A",
+    marginBottom: 10,
+  },
 
   row: {
     padding: 14,
     borderRadius: 16,
     border: "1px solid rgba(148,163,184,0.25)",
-    background: "linear-gradient(180deg, rgba(255,255,255,0.95), rgba(248,250,252,0.9))",
+    background:
+      "linear-gradient(180deg, rgba(255,255,255,0.95), rgba(248,250,252,0.9))",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
