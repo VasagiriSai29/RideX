@@ -3,6 +3,8 @@ import { useAuth } from "../auth/Authprovider";
 import AppLayout from "../components/AppLayout";
 import PassengerForm from "../components/PassengerForm";
 import { listenPassengers } from "../services/passengers";
+import AddRideModal from "../components/AddRideModal";
+import { listenRidesByDate } from "../services/rides";
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
@@ -13,10 +15,25 @@ export default function Dashboard() {
   // search box in top bar
   const [search, setSearch] = useState("");
 
-  // Add Ride button (for now just opens alert, later we plug modal)
-  const onAddRide = () => {
-    alert("Add Ride clicked ✅ (Next we will open modal)");
-  };
+  const onAddRide = () => setIsRideOpen(true);
+  const [isRideOpen, setIsRideOpen] = useState(false);
+
+  const [selectedDate, setSelectedDate] = useState(() => {
+  const d = new Date();
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+});
+
+const [dayRides, setDayRides] = useState([]);
+  
+useEffect(() => {
+  const unsub = listenRidesByDate(selectedDate, setDayRides);
+  return () => unsub && unsub();
+}, [selectedDate]);
+
+  
 
   useEffect(() => {
     const unsub = listenPassengers(setRiders);
@@ -41,7 +58,7 @@ export default function Dashboard() {
     };
   }, [riders]);
 
-  return (
+    return (
     <AppLayout
       title="Dashboard"
       user={user}
@@ -59,6 +76,65 @@ export default function Dashboard() {
 
       {/* Two-column main */}
       <div style={styles.grid}>
+        <div style={styles.card}>
+  <div style={styles.cardHeader}>
+    <div style={styles.cardTitle}>Rides</div>
+
+    <input
+      type="date"
+      value={selectedDate}
+      onChange={(e) => setSelectedDate(e.target.value)}
+      style={{
+        border: "1px solid rgba(148,163,184,0.35)",
+        borderRadius: 12,
+        padding: "8px 10px",
+        fontSize: 12,
+        fontWeight: 800,
+        outline: "none",
+        background: "white",
+      }}
+    />
+  </div>
+
+  <DaySummary rides={dayRides} />
+
+  {dayRides.length === 0 ? (
+    <div style={styles.empty}>No rides for this date.</div>
+  ) : (
+    <div style={{ display: "grid", gap: 10 }}>
+      {dayRides.map((r) => (
+        <div key={r.id} style={styles.row}>
+          <div style={{ display: "grid", gap: 4 }}>
+            <div style={{ fontWeight: 900, color: "#0F172A" }}>
+              {r.riderName || "Unknown"}
+            </div>
+
+            <div style={styles.muted}>
+              {r.pickupTime || "--:--"} → {r.dropTime || "--:--"}
+            </div>
+
+            <div style={styles.muted}>
+              {r.pickupLocation} → {r.dropLocation}
+            </div>
+
+            <div style={styles.muted}>
+              {r.payType} • {r.paymentStatus}
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gap: 6, textAlign: "right" }}>
+            <div style={styles.money}>
+              ${Math.round(Number(r.totalAmount || 0))}
+            </div>
+            <div style={styles.muted}>
+              paid: ${Math.round(Number(r.cashAmount || 0) + Number(r.zelleAmount || 0))}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
         <div style={styles.card}>
           <div style={styles.cardTitle}>Add Rider</div>
           <PassengerForm />
@@ -79,27 +155,34 @@ export default function Dashboard() {
           ) : (
             <div style={{ display: "grid", gap: 10 }}>
               {filteredRiders.map((p) => (
-                <div key={p.id} style={styles.row}>
-                  <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                    <div style={styles.badge}>
-                      {(p.name?.[0] || "R").toUpperCase()}
-                    </div>
+  <div key={p.id} style={styles.row}>
+    <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+      <div style={styles.badge}>
+        {(p.name?.[0] || "R").toUpperCase()}
+      </div>
 
-                    <div style={{ display: "grid", gap: 2 }}>
-                      <div style={{ fontWeight: 900, color: "#0F172A" }}>
-                        {p.name}
-                      </div>
-                      <div style={styles.muted}>{p.phone || "—"}</div>
-                    </div>
-                  </div>
+      <div style={{ display: "grid", gap: 2 }}>
+        <div style={{ fontWeight: 900, color: "#0F172A" }}>
+          {p.name}
+        </div>
+        <div style={styles.muted}>{p.phone || "—"}</div>
+      </div>
+    </div>
 
-                  <div style={styles.money}>$0</div>
-                </div>
+    <div style={styles.money}>$0</div>
+  </div>
               ))}
             </div>
           )}
         </div>
       </div>
+
+      {/* ✅ Add Ride Modal goes here */}
+      <AddRideModal
+        open={isRideOpen}
+        onClose={() => setIsRideOpen(false)}
+        riders={riders}
+      />
     </AppLayout>
   );
 }
@@ -110,6 +193,49 @@ function Stat({ label, value, sub }) {
       <div style={styles.statLabel}>{label}</div>
       <div style={styles.statValue}>{value}</div>
       <div style={styles.muted}>{sub}</div>
+    </div>
+  );
+}
+
+function DaySummary({ rides }) {
+  const totals = useMemo(() => {
+    const total = rides.reduce((s, r) => s + Number(r.totalAmount || 0), 0);
+
+    // paid logic:
+    // - if paymentStatus is "paid" => count full total
+    // - else count whatever cash+zelle entered (partial)
+    const paid = rides.reduce((s, r) => {
+      const t = Number(r.totalAmount || 0);
+      const c = Number(r.cashAmount || 0);
+      const z = Number(r.zelleAmount || 0);
+      if (r.paymentStatus === "paid") return s + t;
+      return s + c + z;
+    }, 0);
+
+    const due = Math.max(0, total - paid);
+    return { total, paid, due, count: rides.length };
+  }, [rides]);
+
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 12 }}>
+      <Mini label="Rides" value={totals.count} />
+      <Mini label="Total" value={`$${Math.round(totals.total)}`} />
+      <Mini label="Paid" value={`$${Math.round(totals.paid)}`} />
+      <Mini label="Due" value={`$${Math.round(totals.due)}`} />
+    </div>
+  );
+}
+
+function Mini({ label, value }) {
+  return (
+    <div style={{
+      background: "rgba(248,250,252,0.9)",
+      border: "1px solid rgba(15, 23, 42, 0.06)",
+      borderRadius: 14,
+      padding: 10,
+    }}>
+      <div style={{ fontSize: 11, color: "#64748B", fontWeight: 900 }}>{label}</div>
+      <div style={{ fontSize: 14, color: "#0F172A", fontWeight: 900, marginTop: 4 }}>{value}</div>
     </div>
   );
 }
@@ -186,4 +312,4 @@ const styles = {
     color: "#64748B",
     background: "rgba(248,250,252,0.7)",
   },
-};
+};  

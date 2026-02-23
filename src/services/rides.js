@@ -34,3 +34,30 @@ export const listenRidesByRider = (riderId, setRides) => {
     setRides(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
   });
 };
+
+// Listen rides for a specific date (YYYY-MM-DD)
+export const listenRidesByDate = (rideDate, setRides) => {
+  const q = query(
+    ridesRef,
+    where("rideDate", "==", rideDate),
+    orderBy("createdAt", "desc")
+  );
+
+  return onSnapshot(q, (snap) => {
+    setRides(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+  });
+};
+
+// OPTIONAL (Next step): Listen rides for date + rider together
+export const listenRidesByDateAndRider = (rideDate, riderId, setRides) => {
+  const q = query(
+    ridesRef,
+    where("rideDate", "==", rideDate),
+    where("riderId", "==", riderId),
+    orderBy("createdAt", "desc")
+  );
+
+  return onSnapshot(q, (snap) => {
+    setRides(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+  });
+};

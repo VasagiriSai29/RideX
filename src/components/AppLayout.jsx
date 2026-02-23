@@ -1,6 +1,7 @@
 import React from "react";
 
-export default function AppLayout({
+export default function 
+AppLayout({
   title = "Dashboard",
   children,
   onLogout,
