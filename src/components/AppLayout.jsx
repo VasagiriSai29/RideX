@@ -1,6 +1,14 @@
 import React from "react";
 
-export default function AppLayout({ title = "Dashboard", children, onLogout, user }) {
+export default function AppLayout({
+  title = "Dashboard",
+  children,
+  onLogout,
+  user,
+  searchValue,
+  onSearchChange,
+  onAddRide,
+}) {
   return (
     <div style={styles.shell}>
       {/* Sidebar */}
@@ -17,14 +25,18 @@ export default function AppLayout({ title = "Dashboard", children, onLogout, use
 
         <div style={styles.sidebarFooter}>
           <div style={styles.userRow}>
-            <div style={styles.avatar}>{(user?.displayName?.[0] || "R").toUpperCase()}</div>
+            <div style={styles.avatar}>
+              {(user?.displayName?.[0] || "R").toUpperCase()}
+            </div>
             <div style={{ minWidth: 0 }}>
               <div style={styles.userName}>{user?.displayName || "User"}</div>
               <div style={styles.userEmail}>{user?.email || ""}</div>
             </div>
           </div>
 
-          <button onClick={onLogout} style={styles.logoutBtn}>Logout</button>
+          <button onClick={onLogout} style={styles.logoutBtn}>
+            Logout
+          </button>
         </div>
       </aside>
 
@@ -40,10 +52,17 @@ export default function AppLayout({ title = "Dashboard", children, onLogout, use
           <div style={styles.topbarRight}>
             <div style={styles.searchWrap}>
               <span style={styles.searchIcon}>⌕</span>
-              <input style={styles.search} placeholder="Search Rider..." />
+              <input
+                style={styles.search}
+                value={searchValue || ""}
+                onChange={(e) => onSearchChange?.(e.target.value)}
+                placeholder="Search Rider..."
+              />
             </div>
 
-            <button style={styles.primaryBtn}>+ Add Ride</button>
+            <button style={styles.primaryBtn} onClick={onAddRide}>
+              + Add Ride
+            </button>
           </div>
         </div>
 
@@ -109,8 +128,21 @@ const styles = {
     border: "1px solid rgba(37, 99, 235, 0.18)",
     flex: "0 0 auto",
   },
-  userName: { fontWeight: 800, color: "#0F172A", fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
-  userEmail: { fontSize: 12, color: "#64748B", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
+  userName: {
+    fontWeight: 800,
+    color: "#0F172A",
+    fontSize: 13,
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  },
+  userEmail: {
+    fontSize: 12,
+    color: "#64748B",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+  },
 
   logoutBtn: {
     padding: "10px 12px",

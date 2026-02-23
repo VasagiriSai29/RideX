@@ -6,25 +6,50 @@ import { listenPassengers } from "../services/passengers";
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
+
+  // riders data (still stored in passengers collection/services for now)
   const [riders, setRiders] = useState([]);
 
-  // Listen to riders (still using passengers service internally)
+  // search box in top bar
+  const [search, setSearch] = useState("");
+
+  // Add Ride button (for now just opens alert, later we plug modal)
+  const onAddRide = () => {
+    alert("Add Ride clicked ✅ (Next we will open modal)");
+  };
+
   useEffect(() => {
     const unsub = listenPassengers(setRiders);
-    return () => unsub();
+    return () => unsub && unsub();
   }, []);
+
+  const filteredRiders = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return riders;
+    return riders.filter((r) => {
+      const name = (r.name || "").toLowerCase();
+      const phone = (r.phone || "").toLowerCase();
+      return name.includes(q) || phone.includes(q);
+    });
+  }, [riders, search]);
 
   const stats = useMemo(() => {
     return {
       totalRiders: riders.length,
-      totalPending: 0, // Later we calculate from rides
-      todayRides: 0,   // Later
+      totalPending: 0, // later
+      todayRides: 0, // later
     };
   }, [riders]);
 
   return (
-    <AppLayout title="Dashboard" user={user} onLogout={logout}>
-      
+    <AppLayout
+      title="Dashboard"
+      user={user}
+      onLogout={logout}
+      searchValue={search}
+      onSearchChange={setSearch}
+      onAddRide={onAddRide}
+    >
       {/* Stats row */}
       <div style={styles.statsRow}>
         <Stat label="Riders" value={stats.totalRiders} sub="Total added" />
@@ -34,39 +59,37 @@ export default function Dashboard() {
 
       {/* Two-column main */}
       <div style={styles.grid}>
-        
-        {/* Add Rider */}
         <div style={styles.card}>
           <div style={styles.cardTitle}>Add Rider</div>
-          <PassengerForm /> {/* keeping file same for safety */}
+          <PassengerForm />
         </div>
 
-        {/* Riders List */}
         <div style={styles.card}>
           <div style={styles.cardHeader}>
             <div style={styles.cardTitle}>Riders</div>
             <div style={styles.smallMuted}>Balances start Day 3</div>
           </div>
 
-          {riders.length === 0 ? (
+          {filteredRiders.length === 0 ? (
             <div style={styles.empty}>
-              No riders yet. Add your first rider.
+              {search.trim()
+                ? "No riders match your search."
+                : "No riders yet. Add your first rider."}
             </div>
           ) : (
             <div style={{ display: "grid", gap: 10 }}>
-              {riders.map((p) => (
+              {filteredRiders.map((p) => (
                 <div key={p.id} style={styles.row}>
                   <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
                     <div style={styles.badge}>
                       {(p.name?.[0] || "R").toUpperCase()}
                     </div>
+
                     <div style={{ display: "grid", gap: 2 }}>
                       <div style={{ fontWeight: 900, color: "#0F172A" }}>
                         {p.name}
                       </div>
-                      <div style={styles.muted}>
-                        {p.phone || "—"}
-                      </div>
+                      <div style={styles.muted}>{p.phone || "—"}</div>
                     </div>
                   </div>
 
@@ -129,11 +152,7 @@ const styles = {
     gap: 10,
     flexWrap: "wrap",
   },
-  cardTitle: {
-    fontWeight: 900,
-    color: "#0F172A",
-    marginBottom: 10,
-  },
+  cardTitle: { fontWeight: 900, color: "#0F172A", marginBottom: 10 },
 
   row: {
     padding: 14,

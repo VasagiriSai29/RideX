@@ -11,6 +11,7 @@ import {
 
 const ridesRef = collection(db, "rides");
 
+
 export const addRide = async (ride) => {
   return addDoc(ridesRef, {
     ...ride,
